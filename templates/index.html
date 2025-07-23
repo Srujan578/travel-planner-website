@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 AI Travel Planner Agent</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌍</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+            position: relative;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* Background Image Container */
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: url("{{ url_for('static', filename='images/beach.jpeg') }}") center center / cover no-repeat;
+        }
+
+        .background-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(135deg, 
+                rgba(0, 0, 0, 0.3) 0%, 
+                rgba(0, 0, 0, 0.4) 50%,
+                rgba(0, 0, 0, 0.3) 100%);
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 0;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            width: 100%;
+            max-width: 100%;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 350px;
+            background: linear-gradient(180deg, 
+                rgba(196, 181, 253, 0.25) 0%, 
+                rgba(233, 213, 255, 0.25) 100%);
+            backdrop-filter: blur(15px);
+            color: white;
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 26px;
+            font-weight: bold;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .logo::before {
+            content: "🌍";
+            font-size: 36px;
+            margin-right: 12px;
+        }
+
+        .features {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .feature-item {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .feature-item:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .feature-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            color: white;
+        }
+
+        .feature-title::before {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        .feature-item:nth-child(1) .feature-title::before { content: "🎯"; }
+        .feature-item:nth-child(2) .feature-title::before { content: "💡"; }
+        .feature-item:nth-child(3) .feature-title::before { content: "📋"; }
+        .feature-item:nth-child(4) .feature-title::before { content: "💾"; }
+
+        .feature-description {
+            font-size: 14px;
+            line-height: 1.5;
+            opacity: 0.9;
+            color: white;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 25px 40px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 32px;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .header h1::before {
+            content: "🤖";
+            font-size: 36px;
+        }
+
+        .header p {
+            color: white;
+            font-size: 18px;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+            opacity: 0.95;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .quick-prompts {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .quick-prompt {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            color: white;
+            font-weight: 500;
+        }
+
+        .quick-prompt:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(25px);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar for messages */
+        .messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+
+        .messages::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .welcome-message {
+            text-align: center;
+            color: white;
+            margin: auto;
+            max-width: 600px;
+            padding: 40px 20px;
+        }
+
+        .welcome-message h3 {
+            color: white;
+            font-size: 28px;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .welcome-message p {
+            color: white;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            opacity: 0.95;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+            width: 100%;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .user .message-content {
+            background: rgba(196, 181, 253, 0.4);
+            border-bottom-right-radius: 5px;
+        }
+
+        .assistant .message-content {
+            background: rgba(255, 255, 255, 0.2);
+            border-bottom-left-radius: 5px;
+        }
+
+        .message-avatar {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin: 0 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user .message-avatar {
+            background: rgba(196, 181, 253, 0.6);
+            order: 1;
+        }
+
+        .assistant .message-avatar {
+            background: rgba(16, 185, 129, 0.6);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #messageInput {
+            width: 100%;
+            min-height: 50px;
+            max-height: 120px;
+            padding: 15px 50px 15px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            resize: none;
+            font-family: inherit;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            color: white;
+            transition: all 0.3s ease;
+        }
+
+        #messageInput::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        #messageInput:focus {
+            outline: none;
+            border-color: rgba(255, 255, 255, 0.6);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+        }
+
+        .send-button {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(167, 139, 250, 0.5);
+            color: white;
+            border: none;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .send-button:hover {
+            background: rgba(167, 139, 250, 0.7);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .send-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .typing-indicator .message-avatar {
+            background: rgba(16, 185, 129, 0.6);
+        }
+
+        .typing-dots {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            padding: 15px 20px;
+            border-radius: 18px;
+            border-bottom-left-radius: 5px;
+        }
+
+        .typing-dots span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            margin: 0 2px;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-10px); }
+        }
+
+        /* All text white */
+        * {
+            color: white;
+        }
+
+        .download-btn {
+            background: rgba(16, 185, 129, 0.6);
+            backdrop-filter: blur(10px);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            background: rgba(16, 185, 129, 0.8);
+            transform: translateY(-2px);
+            color: white;
+            text-decoration: none;
+        }
+
+        .error-message {
+            background: rgba(254, 226, 226, 0.2);
+            backdrop-filter: blur(15px);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                padding: 20px;
+            }
+
+            .features {
+                display: none;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .header h1::before {
+                font-size: 28px;
+            }
+
+            .quick-prompts {
+                flex-direction: column;
+            }
+
+            .quick-prompt {
+                text-align: center;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Background -->
+    <div class="background-container" id="backgroundContainer"></div>
+    <div class="background-overlay"></div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">AI Travel Planner</div>
+            <div class="features">
+                <div class="feature-item">
+                    <div class="feature-title">Ask for trip goals</div>
+                    <div class="feature-description">Get personalized recommendations based on your preferences and budget</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">Suggest activities</div>
+                    <div class="feature-description">Discover curated ideas and local attractions for any destination</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">Build itinerary</div>
+                    <div class="feature-description">Create detailed day-by-day travel schedules efficiently</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-title">Save & download</div>
+                    <div class="feature-description">Export your travel plans as downloadable files</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header">
+                <h1>Your AI Travel Planning Assistant</h1>
+                <p>Plan amazing trips with personalized itineraries powered by AI</p>
+            </div>
+
+            <div class="chat-container">
+                <div class="quick-prompts">
+                    <div class="quick-prompt" data-prompt="Plan a 5-day trip to Bali for under ₹60,000">🏝️ Bali Budget Trip</div>
+                    <div class="quick-prompt" data-prompt="Make a Paris itinerary focused on art and culture">🎨 Paris Art Tour</div>
+                    <div class="quick-prompt" data-prompt="Help me plan a relaxing weekend trip to Munnar">🌿 Munnar Weekend</div>
+                    <div class="quick-prompt" data-prompt="What are fun things to do in Goa for 3 days?">🏖️ Goa Adventure</div>
+                </div>
+
+                <div class="messages" id="messages">
+                    <div class="welcome-message">
+                        <h3>Welcome to your AI Travel Planner! ✈️</h3>
+                        <p>Tell me about your dream destination and I'll create the perfect itinerary for you.</p>
+                        <p>Try one of the quick prompts above or ask me anything about travel planning!</p>
+                    </div>
+                </div>
+
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="message-avatar">🤖</div>
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <textarea id="messageInput" placeholder="Ask me to plan your next adventure..." rows="1"></textarea>
+                        <button class="send-button" id="sendButton">
+                            <span>➤</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // Chat functionality with Flask backend
+            const messagesContainer = document.getElementById('messages');
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const typingIndicator = document.getElementById('typingIndicator');
+            const quickPrompts = document.querySelectorAll('.quick-prompt');
+
+            // Generate session ID
+            const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
+
+            // Check if all elements exist
+            if (!messagesContainer || !messageInput || !sendButton) {
+                console.error('Required DOM elements not found');
+                return;
+            }
+
+            // Auto-resize textarea
+            messageInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            });
+
+            // Send on Enter (but not Shift+Enter)
+            messageInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // Quick prompt click handlers
+            quickPrompts.forEach(prompt => {
+                prompt.addEventListener('click', function() {
+                    const promptText = this.getAttribute('data-prompt');
+                    if (promptText) {
+                        messageInput.value = promptText;
+                        sendMessage();
+                    }
+                });
+            });
+
+            // Send button click handler
+            sendButton.addEventListener('click', sendMessage);
+
+            function addMessage(content, isUser = false, isJson = false) {
+                // Remove welcome message if it exists
+                const welcomeMessage = messagesContainer.querySelector('.welcome-message');
+                if (welcomeMessage) {
+                    welcomeMessage.remove();
+                    // Reset messages container to start from top
+                    messagesContainer.style.justifyContent = 'flex-start';
+                }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user' : 'assistant'}`;
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = isUser ? '👤' : '🤖';
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content';
+                
+                if (isJson && typeof content === 'object') {
+                    // Format the travel plan properly
+                    let formattedHtml = '<div><strong>✅ Your travel plan is ready!</strong></div><br>';
+                    
+                    // Destination info
+                    if (content.destination) {
+                        formattedHtml += `<strong>📍 Destination:</strong> ${content.destination}<br>`;
+                    }
+                    if (content.duration) {
+                        formattedHtml += `<strong>⏰ Duration:</strong> ${content.duration}<br>`;
+                    }
+                    if (content.budget_range) {
+                        formattedHtml += `<strong>💰 Budget:</strong> ${content.budget_range}<br><br>`;
+                    }
+                    
+                    // Highlights
+                    if (content.highlights && content.highlights.length > 0) {
+                        formattedHtml += '<strong>✨ Trip Highlights:</strong><br>';
+                        content.highlights.forEach(highlight => {
+                            formattedHtml += `• ${highlight}<br>`;
+                        });
+                        formattedHtml += '<br>';
+                    }
+                    
+                    // Detailed Itinerary
+                    if (content.itinerary && content.itinerary.length > 0) {
+                        formattedHtml += '<strong>📅 Detailed Itinerary:</strong><br><br>';
+                        content.itinerary.forEach(day => {
+                            formattedHtml += `<strong>Day ${day.day_number}: ${day.title}</strong><br>`;
+                            if (day.activities && day.activities.length > 0) {
+                                day.activities.forEach(activity => {
+                                    formattedHtml += `<em>${activity.time}:</em> ${activity.activity}`;
+                                    if (activity.location) formattedHtml += ` at ${activity.location}`;
+                                    if (activity.cost) formattedHtml += ` (${activity.cost})`;
+                                    formattedHtml += '<br>';
+                                    if (activity.tips) formattedHtml += `💡 ${activity.tips}<br>`;
+                                });
+                            }
+                            if (day.meals && day.meals.length > 0) {
+                                formattedHtml += '<strong>🍽️ Recommended Restaurants:</strong><br>';
+                                day.meals.forEach(meal => {
+                                    formattedHtml += `• ${meal}<br>`;
+                                });
+                            }
+                            if (day.food_recommendations && day.food_recommendations.length > 0) {
+                                formattedHtml += '<strong>🥘 Must-Try Foods:</strong><br>';
+                                day.food_recommendations.forEach(food => {
+                                    formattedHtml += `• ${food}<br>`;
+                                });
+                            }
+                            formattedHtml += '<br>';
+                        });
+                    }
+                    
+                    // Food Guide Section
+                    if (content.food_guide) {
+                        formattedHtml += '<strong>🍴 Complete Food Guide:</strong><br>';
+                        if (content.food_guide.must_try_dishes && content.food_guide.must_try_dishes.length > 0) {
+                            formattedHtml += '<strong>Must-Try Dishes:</strong><br>';
+                            content.food_guide.must_try_dishes.forEach(dish => {
+                                formattedHtml += `• ${dish}<br>`;
+                            });
+                        }
+                        if (content.food_guide.popular_restaurants && content.food_guide.popular_restaurants.length > 0) {
+                            formattedHtml += '<strong>Popular Restaurants:</strong><br>';
+                            content.food_guide.popular_restaurants.forEach(restaurant => {
+                                formattedHtml += `• ${restaurant}<br>`;
+                            });
+                        }
+                        if (content.food_guide.street_food_spots && content.food_guide.street_food_spots.length > 0) {
+                            formattedHtml += '<strong>Street Food Spots:</strong><br>';
+                            content.food_guide.street_food_spots.forEach(spot => {
+                                formattedHtml += `• ${spot}<br>`;
+                            });
+                        }
+                        if (content.food_guide.local_drinks && content.food_guide.local_drinks.length > 0) {
+                            formattedHtml += '<strong>Local Drinks:</strong><br>';
+                            content.food_guide.local_drinks.forEach(drink => {
+                                formattedHtml += `• ${drink}<br>`;
+                            });
+                        }
+                        formattedHtml += '<br>';
+                    }
+                    
+                    // Local Tips
+                    if (content.local_tips && content.local_tips.length > 0) {
+                        formattedHtml += '<strong>💡 Local Tips:</strong><br>';
+                        content.local_tips.forEach(tip => {
+                            formattedHtml += `• ${tip}<br>`;
+                        });
+                        formattedHtml += '<br>';
+                    }
+                    
+                    // Packing Tips
+                    if (content.packing_tips && content.packing_tips.length > 0) {
+                        formattedHtml += '<strong>🎒 Packing Essentials:</strong><br>';
+                        content.packing_tips.forEach(item => {
+                            formattedHtml += `• ${item}<br>`;
+                        });
+                        formattedHtml += '<br>';
+                    }
+                    
+                    // Emergency Contacts
+                    if (content.emergency_contacts && content.emergency_contacts.length > 0) {
+                        formattedHtml += '<strong>📞 Emergency Contacts:</strong><br>';
+                        content.emergency_contacts.forEach(contact => {
+                            formattedHtml += `• ${contact}<br>`;
+                        });
+                        formattedHtml += '<br>';
+                    }
+                    
+                    // Download buttons - SUPER SIMPLE APPROACH
+                    if (content.plan_id) {
+                        formattedHtml += `
+                            <div style="margin: 15px 0; padding: 15px; background: rgba(16, 185, 129, 0.2); border-radius: 10px; text-align: center;">
+                                <strong>📄 Download Your Travel Plan</strong><br><br>
+                                <a href="/simple-download?plan_id=${content.plan_id}&format=text" target="_blank" class="download-btn">📝 Download Text File</a>
+                                <a href="/simple-download?plan_id=${content.plan_id}&format=json" target="_blank" class="download-btn">💾 Download JSON</a>
+                            </div>
+                        `;
+                    }
+                    
+                    // Download instructions
+                    if (content.download_instructions) {
+                        formattedHtml += `
+                            <div style="margin: 15px 0; padding: 15px; background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; border-radius: 5px;">
+                                ${content.download_instructions.replace(/\n/g, '<br>')}
+                            </div>
+                        `;
+                    }
+                    
+                    messageContent.innerHTML = formattedHtml;
+                } else {
+                    messageContent.innerHTML = (typeof content === 'string' ? content : JSON.stringify(content)).replace(/\n/g, '<br>');
+                }
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+                messagesContainer.appendChild(messageDiv);
+                
+                // Smooth scroll to bottom
+                requestAnimationFrame(() => {
+                    messagesContainer.scrollTo({
+                        top: messagesContainer.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+
+            function addErrorMessage(error) {
+                // Remove welcome message if it exists
+                const welcomeMessage = messagesContainer.querySelector('.welcome-message');
+                if (welcomeMessage) {
+                    welcomeMessage.remove();
+                }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message assistant';
+                
+                const avatar = document.createElement('div');
+                avatar.className = 'message-avatar';
+                avatar.textContent = '⚠️';
+                
+                const messageContent = document.createElement('div');
+                messageContent.className = 'message-content error-message';
+                messageContent.innerHTML = `
+                    <strong>❌ Oops! Something went wrong</strong><br>
+                    ${error}<br><br>
+                    <small>💡 Tips:</small><br>
+                    <small>• Check your internet connection</small><br>
+                    <small>• Make sure the server is running</small><br>
+                    <small>• Try refreshing the page</small>
+                `;
+                
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(messageContent);
+                messagesContainer.appendChild(messageDiv);
+                
+                // Force scroll to bottom
+                setTimeout(() => {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }, 100);
+            }
+
+            function showTyping() {
+                if (typingIndicator) {
+                    typingIndicator.style.display = 'flex';
+                    // Smooth scroll to bottom when typing indicator appears
+                    requestAnimationFrame(() => {
+                        messagesContainer.scrollTo({
+                            top: messagesContainer.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                    });
+                }
+            }
+
+            function hideTyping() {
+                if (typingIndicator) {
+                    typingIndicator.style.display = 'none';
+                }
+            }
+
+            async function sendMessage() {
+                const message = messageInput.value.trim();
+                if (!message || sendButton.disabled) return;
+
+                // Add user message
+                addMessage(message, true);
+                
+                // Clear input and reset height
+                messageInput.value = '';
+                messageInput.style.height = '50px';
+                
+                // Disable send button and show loading state
+                sendButton.disabled = true;
+                sendButton.classList.add('loading');
+                
+                // Show typing indicator
+                showTyping();
+                
+                try {
+                    // Send message to Flask backend
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: message,
+                            session_id: sessionId
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // Add AI response
+                        if (data.is_json && typeof data.response === 'object') {
+                            addMessage(data.response, false, true);
+                        } else {
+                            addMessage(data.response, false, false);
+                        }
+                    } else {
+                        addErrorMessage(data.error || 'Unknown error occurred');
+                    }
+                } catch (error) {
+                    console.error('Network error:', error);
+                    addErrorMessage(`Connection failed: ${error.message}`);
+                } finally {
+                    // Always re-enable the interface
+                    hideTyping();
+                    sendButton.disabled = false;
+                    sendButton.classList.remove('loading');
+                    
+                    // Re-focus input and ensure it's ready for next message
+                    setTimeout(() => {
+                        messageInput.focus();
+                        messageInput.disabled = false;
+                    }, 100);
+                }
+            }
+
+            // Initialize - focus on input
+            messageInput.focus();
+            
+            console.log('🌍 Travel Planner initialized successfully!');
+        });
+    </script>
+</body>
+</html>

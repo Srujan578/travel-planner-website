@@ -1,0 +1,1 @@
+{"highlights": "Skydiving, dune bashing, skiing, theme parks, and nightlife", "itinerary": "Day 1: Arrival and skydiving\nDay 2: Dune bashing and desert fun\nDay 3: Skiing and shopping\nDay 4: Theme park fun\nDay 5: Nightlife and clubbing", "saved_path": "plans/dubai_20250722_141539.txt"}
