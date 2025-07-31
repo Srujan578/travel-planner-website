@@ -548,12 +548,16 @@
                     <div class="quick-prompt" data-prompt="Make a Paris itinerary focused on art and culture">🎨 Paris Art Tour</div>
                     <div class="quick-prompt" data-prompt="Help me plan a relaxing weekend trip to Munnar">🌿 Munnar Weekend</div>
                     <div class="quick-prompt" data-prompt="What are fun things to do in Goa for 3 days?">🏖️ Goa Adventure</div>
+                    <div class="quick-prompt" data-prompt="Plan a trip to Tokyo from 04-15 to 04-20">🌸 Tokyo Spring Trip</div>
+                    <div class="quick-prompt" data-prompt="Dubai vacation for 7 days starting 12-25">🌴 Dubai Winter Escape</div>
                 </div>
 
                 <div class="messages" id="messages">
                     <div class="welcome-message">
                         <h3>Welcome to your AI Travel Planner! ✈️</h3>
                         <p>Tell me about your dream destination and I'll create the perfect itinerary for you.</p>
+                        <p><strong>💡 Pro Tip:</strong> Include specific dates for weather-aware planning!</p>
+                        <p>Examples: "Tokyo from 04-15 to 04-20" or "Dubai for 7 days starting 12-25"</p>
                         <p>Try one of the quick prompts above or ask me anything about travel planning!</p>
                     </div>
                 </div>
@@ -658,8 +662,66 @@
                         formattedHtml += `<strong>⏰ Duration:</strong> ${content.duration}<br>`;
                     }
                     if (content.budget_range) {
-                        formattedHtml += `<strong>💰 Budget:</strong> ${content.budget_range}<br><br>`;
+                        formattedHtml += `<strong>💰 Budget:</strong> ${content.budget_range}<br>`;
                     }
+                    
+                    // Travel dates
+                    if (content.travel_dates) {
+                        formattedHtml += `<strong>📅 Travel Dates:</strong> ${content.travel_dates.start_date} to ${content.travel_dates.end_date} (${content.travel_dates.duration_days} days)<br>`;
+                    }
+                    
+                    // Weather information
+                    if (content.weather_info && content.weather_info.current) {
+                        const weather = content.weather_info.current;
+                        const forecastType = content.weather_info.forecast_type || 'current';
+                        
+                        if (forecastType === 'seasonal') {
+                            const season = content.weather_info.season || 'unknown';
+                            formattedHtml += `<strong>🌤️ Seasonal Weather (${season}):</strong> ${weather.temperature}°C, ${weather.description}<br>`;
+                            if (content.weather_info.seasonal_tips) {
+                                formattedHtml += `<strong>💡 Seasonal Tip:</strong> ${content.weather_info.seasonal_tips}<br>`;
+                            }
+                        } else {
+                            formattedHtml += `<strong>🌤️ Current Weather:</strong> ${weather.temperature}°C, ${weather.description}<br>`;
+                            if (weather.humidity) {
+                                formattedHtml += `<strong>💧 Humidity:</strong> ${weather.humidity}%<br>`;
+                            }
+                            if (weather.wind_speed) {
+                                formattedHtml += `<strong>💨 Wind:</strong> ${weather.wind_speed} m/s<br>`;
+                            }
+                        }
+                    }
+                    
+                    // Price estimates
+                    if (content.price_estimates) {
+                        const prices = content.price_estimates;
+                        const currency = prices.currency || 'USD';
+                        
+                        if (prices.daily_budget) {
+                            const dailyTotal = prices.daily_budget.total || prices.daily_budget.mid_range || prices.daily_budget.budget;
+                            formattedHtml += `<strong>💰 Daily Budget:</strong> ${dailyTotal} ${currency}<br>`;
+                            
+                            // Show breakdown if available
+                            if (prices.daily_budget.accommodation) {
+                                formattedHtml += `<em>🏨 Accommodation: ${prices.daily_budget.accommodation} ${currency}</em><br>`;
+                            }
+                            if (prices.daily_budget.food) {
+                                formattedHtml += `<em>🍽️ Food: ${prices.daily_budget.food} ${currency}</em><br>`;
+                            }
+                            if (prices.daily_budget.transport) {
+                                formattedHtml += `<em>🚗 Transport: ${prices.daily_budget.transport} ${currency}</em><br>`;
+                            }
+                            if (prices.daily_budget.activities) {
+                                formattedHtml += `<em>🎯 Activities: ${prices.daily_budget.activities} ${currency}</em><br>`;
+                            }
+                        }
+                        
+                        if (prices.total_trip_cost) {
+                            formattedHtml += `<strong>💳 Total Trip Cost:</strong> ${prices.total_trip_cost}<br>`;
+                        }
+                    }
+                    
+                    formattedHtml += '<br>';
                     
                     // Highlights
                     if (content.highlights && content.highlights.length > 0) {
@@ -675,6 +737,12 @@
                         formattedHtml += '<strong>📅 Detailed Itinerary:</strong><br><br>';
                         content.itinerary.forEach(day => {
                             formattedHtml += `<strong>Day ${day.day_number}: ${day.title}</strong><br>`;
+                            
+                            // Add weather for the day
+                            if (day.weather) {
+                                formattedHtml += `<em>🌤️ Weather:</em> ${day.weather}<br>`;
+                            }
+                            
                             if (day.activities && day.activities.length > 0) {
                                 day.activities.forEach(activity => {
                                     formattedHtml += `<em>${activity.time}:</em> ${activity.activity}`;
@@ -753,6 +821,15 @@
                         formattedHtml += '<strong>📞 Emergency Contacts:</strong><br>';
                         content.emergency_contacts.forEach(contact => {
                             formattedHtml += `• ${contact}<br>`;
+                        });
+                        formattedHtml += '<br>';
+                    }
+                    
+                    // Weather Forecast
+                    if (content.weather_info && content.weather_info.forecast && content.weather_info.forecast.length > 0) {
+                        formattedHtml += '<strong>🌤️ 5-Day Weather Forecast:</strong><br>';
+                        content.weather_info.forecast.forEach(day => {
+                            formattedHtml += `• ${day.date}: ${day.temperature}°C, ${day.description}<br>`;
                         });
                         formattedHtml += '<br>';
                     }

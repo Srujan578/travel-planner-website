@@ -7,3 +7,4 @@ pydantic
 langchain-groq
 python-docx
 requests
+python-dateutil
