@@ -8,3 +8,6 @@ langchain-groq
 python-docx
 requests
 python-dateutil
+flask-login
+flask-sqlalchemy
+werkzeug

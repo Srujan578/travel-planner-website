@@ -1,7 +1,8 @@
 # ===== app.py - Simple Travel Planner with Working Downloads =====
 
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, render_template, request, jsonify, make_response, redirect
 from flask_cors import CORS
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 import os
 import json
 import re
@@ -14,11 +15,32 @@ from typing import Dict, List, Optional
 # Import Groq
 from langchain_groq import ChatGroq
 
+# Import our modules
+from models import db, User
+from auth import auth
+
 # Load environment variables
 load_dotenv()
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-here')
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///travel_planner.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize extensions
+db.init_app(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 CORS(app)
+
+# Register blueprints
+app.register_blueprint(auth, url_prefix='/auth')
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
 
 # Global storage for plans (in production, use a database)
 stored_plans = {}
@@ -1081,16 +1103,31 @@ class SimpleTravelPlannerAgent:
 # Initialize the agent
 travel_agent = SimpleTravelPlannerAgent()
 
+# Import and initialize enhanced planner
+from enhanced_planner import EnhancedTravelPlanner
+enhanced_planner = EnhancedTravelPlanner()
+
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
+@app.route('/login')
+def login():
+    if current_user.is_authenticated:
+        return redirect('/')
+    return render_template('login.html')
+
 @app.route('/chat', methods=['POST'])
+@login_required
 def chat():
     try:
         data = request.get_json()
         user_message = data.get('message', '')
         session_id = data.get('session_id', 'default')
+        current_plan_id = data.get('current_plan_id')
+        group_size = data.get('group_size')
+        group_type = data.get('group_type')
         
         if not user_message:
             return jsonify({
@@ -1098,16 +1135,55 @@ def chat():
                 "error": "No message provided"
             }), 400
         
-        print(f"Received message: {user_message}")
+        print(f"Received message from user {current_user.username}: {user_message}")
         
-        response = travel_agent.chat(user_message, session_id)
+        # Use enhanced planner with user context
+        response = enhanced_planner.enhanced_chat(user_message, current_user.id, session_id, group_size=group_size, group_type=group_type)
         
-        print(f"Agent response success: {response.get('success')}")
+        print(f"Enhanced agent response success: {response.get('success')}")
         
         return jsonify(response)
         
     except Exception as e:
         print(f"Chat endpoint error: {e}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@app.route('/follow-up', methods=['POST'])
+@login_required
+def follow_up():
+    """Handle follow-up requests to modify existing plans"""
+    try:
+        data = request.get_json()
+        user_message = data.get('message', '')
+        session_id = data.get('session_id', 'default')
+        current_plan_id = data.get('current_plan_id')
+        
+        if not user_message:
+            return jsonify({
+                "success": False,
+                "error": "No message provided"
+            }), 400
+        
+        if not current_plan_id:
+            return jsonify({
+                "success": False,
+                "error": "No current plan ID provided"
+            }), 400
+        
+        print(f"Follow-up request from user {current_user.username}: {user_message}")
+        
+        # Handle follow-up request
+        response = enhanced_planner.handle_follow_up_request(
+            user_message, current_user.id, session_id, current_plan_id
+        )
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        print(f"Follow-up endpoint error: {e}")
         return jsonify({
             "success": False,
             "error": str(e)
@@ -1325,11 +1401,18 @@ if __name__ == '__main__':
         print("OPENWEATHER_API_KEY=your_openweather_api_key_here")
         exit(1)
     
-    print(f"🚀 Starting Enhanced Travel Planner with Weather & Prices...")
+    # Create database tables
+    with app.app_context():
+        db.create_all()
+        print("✅ Database tables created")
+    
+    print(f"🚀 Starting Enhanced Travel Planner with User Authentication...")
     print(f"🌐 Server will start on http://localhost:8080")
     print(f"✅ Groq API key is configured")
     print(f"🌤️ Weather API: {'✅ Configured' if os.getenv('OPENWEATHER_API_KEY') else '❌ Not configured (using mock data)'}")
     print(f"💰 Price tracking: ✅ Active")
+    print(f"👤 User authentication: ✅ Active")
+    print(f"🔄 Follow-up handling: ✅ Active")
     print(f"📄 Simple download system active!")
     print("-" * 60)
     
