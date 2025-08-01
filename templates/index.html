@@ -60,6 +60,7 @@
             height: 100vh;
             display: flex;
             overflow: hidden;
+            margin-top: 65px; /* Account for fixed header */
         }
 
         .sidebar {
@@ -547,16 +548,16 @@
             top: 0;
             left: 0;
             width: 100%;
-            background: linear-gradient(135deg, 
-                rgba(100, 65, 255, 0.8) 0%, 
-                rgba(167, 139, 250, 0.8) 100%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 1000;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             color: white;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         .header-content {
@@ -576,12 +577,30 @@
         .header-user-actions {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
+        }
+
+        .header-user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-profile-icon {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: rgba(167, 139, 250, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
 
         .header-username {
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 600;
             color: white;
             text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
@@ -608,9 +627,10 @@
         @media (max-width: 768px) {
             .container {
                 flex-direction: column;
-                height: 100vh;
+                height: calc(100vh - 65px);
                 border-radius: 0;
                 max-width: 100%;
+                margin-top: 65px;
             }
 
             .sidebar {
@@ -637,7 +657,24 @@
 
             .quick-prompt {
                 text-align: center;
-                width: 100%;
+            }
+
+            .header-title {
+                font-size: 20px;
+            }
+
+            .header-user-profile {
+                gap: 8px;
+            }
+
+            .header-profile-icon {
+                width: 30px;
+                height: 30px;
+                font-size: 14px;
+            }
+
+            .header-username {
+                font-size: 14px;
             }
         }
     </style>
@@ -649,9 +686,12 @@
     <!-- Top Header -->
     <header class="main-header">
         <div class="header-content">
-            <div class="header-title">AI Travel Planner</div>
+            <div class="header-title">Travel Planner</div>
             <div class="header-user-actions">
-                <span id="username" class="header-username">User</span>
+                <div class="header-user-profile">
+                    <div class="header-profile-icon">👤</div>
+                    <span id="username" class="header-username">User</span>
+                </div>
                 <button id="logoutBtn" class="header-logout-btn">Logout</button>
             </div>
         </div>
@@ -659,7 +699,7 @@
 
     <div class="container">
         <div class="sidebar">
-            <div class="logo">AI Travel Planner</div>
+            <div class="logo">Travel Planner</div>
             <div class="my-trips-section">
                 <div class="my-trips-title">My Trips</div>
                 <div id="myTripsList" class="my-trips-list">
@@ -694,21 +734,25 @@
 
             <div class="chat-container">
                 <div class="quick-prompts">
-                    <div class="quick-prompt" data-prompt="Plan a 5-day trip to Bali for under ₹60,000">🏝️ Bali Budget Trip</div>
-                    <div class="quick-prompt" data-prompt="Make a Paris itinerary focused on art and culture">🎨 Paris Art Tour</div>
-                    <div class="quick-prompt" data-prompt="Help me plan a relaxing weekend trip to Munnar">🌿 Munnar Weekend</div>
-                    <div class="quick-prompt" data-prompt="What are fun things to do in Goa for 3 days?">🏖️ Goa Adventure</div>
-                    <div class="quick-prompt" data-prompt="Plan a trip to Tokyo from 04-15 to 04-20">🌸 Tokyo Spring Trip</div>
-                    <div class="quick-prompt" data-prompt="Dubai vacation for 7 days starting 12-25">🌴 Dubai Winter Escape</div>
+                    <div class="quick-prompt" data-prompt="Plan a 5-day trip to Bali for 2 people with mid-range budget">🏝️ Bali Couple Trip</div>
+                    <div class="quick-prompt" data-prompt="Make a Paris itinerary for family of 4 with luxury budget">🎨 Paris Family Trip</div>
+                    <div class="quick-prompt" data-prompt="Help me plan a solo trip to Munnar for 3 days">🌿 Munnar Solo Trip</div>
+                    <div class="quick-prompt" data-prompt="Plan a friends trip to Goa for 6 people, 4 days">🏖️ Goa Friends Trip</div>
+                    <div class="quick-prompt" data-prompt="Plan a romantic trip to Tokyo from 04-15 to 04-20 for 2 people">🌸 Tokyo Romantic Trip</div>
+                    <div class="quick-prompt" data-prompt="Dubai vacation for family of 5, 7 days starting 12-25">🌴 Dubai Family Trip</div>
                 </div>
 
                 <div class="messages" id="messages">
                     <div class="welcome-message">
                         <h3>Welcome to your AI Travel Planner! ✈️</h3>
-                        <p>Tell me about your dream destination and I'll create the perfect itinerary for you.</p>
-                        <p><strong>💡 Pro Tip:</strong> Include specific dates for weather-aware planning!</p>
-                        <p>Examples: "Tokyo from 04-15 to 04-20" or "Dubai for 7 days starting 12-25"</p>
-                        <p>Try one of the quick prompts above or ask me anything about travel planning!</p>
+                        <p>I'll help you plan the perfect trip! Just tell me where you want to go and I'll ask you all the important details.</p>
+                        <p><strong>💡 What I'll ask you:</strong></p>
+                        <p>• 📍 Where you want to go</p>
+                        <p>• 📅 How many days you'll be traveling</p>
+                        <p>• 💰 Your budget level (Budget/Mid-range/Luxury)</p>
+                        <p>• 👥 How many people and who you're traveling with</p>
+                        <p>• 📆 When you want to travel</p>
+                        <p>Try one of the quick prompts above or just tell me your destination!</p>
                     </div>
                 </div>
 
@@ -723,16 +767,6 @@
 
                 <div class="input-container">
                     <div class="input-wrapper">
-                        <div class="group-info-row">
-                            <input type="number" id="groupSizeInput" min="1" max="20" placeholder="How many people?" style="width: 120px; margin-right: 10px;">
-                            <select id="groupTypeInput" style="width: 140px;">
-                                <option value="">Who are you travelling with?</option>
-                                <option value="solo">Solo</option>
-                                <option value="family">Family</option>
-                                <option value="friends">Friends</option>
-                                <option value="fiancee">Fiancée</option>
-                            </select>
-                        </div>
                         <textarea id="messageInput" placeholder="Ask me to plan your next adventure..." rows="1"></textarea>
                         <button class="send-button" id="sendButton">
                             <span>➤</span>
@@ -753,8 +787,8 @@
             const sendButton = document.getElementById('sendButton');
             const typingIndicator = document.getElementById('typingIndicator');
             const quickPrompts = document.querySelectorAll('.quick-prompt');
-            const groupSizeInput = document.getElementById('groupSizeInput');
-            const groupTypeInput = document.getElementById('groupTypeInput');
+            // const groupSizeInput = document.getElementById('groupSizeInput'); // Removed
+            // const groupTypeInput = document.getElementById('groupTypeInput'); // Removed
 
             // Generate session ID
             const sessionId = 'session_' + Math.random().toString(36).substr(2, 9);
@@ -1130,20 +1164,18 @@
                 showTyping();
                 
                 try {
-                    // Send message to Flask backend
-                    const response = await fetch('/chat', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            message: message,
-                            session_id: sessionId,
-                            current_plan_id: currentPlanId,
-                            group_size: groupSizeInput.value,
-                            group_type: groupTypeInput.value
-                        })
-                    });
+                                // Send message to Flask backend
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    message: message,
+                    session_id: sessionId,
+                    current_plan_id: currentPlanId
+                })
+            });
 
                     if (!response.ok) {
                         throw new Error(`Server error: ${response.status}`);
@@ -1155,6 +1187,10 @@
                         // Add AI response
                         if (data.is_json && typeof data.response === 'object') {
                             addMessage(data.response, false, true);
+                            // Refresh trips list after successful plan creation
+                            setTimeout(() => {
+                                loadUserTrips();
+                            }, 1000);
                         } else {
                             addMessage(data.response, false, false);
                         }
